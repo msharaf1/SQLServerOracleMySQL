@@ -1,0 +1,120 @@
+1.	RMAN BACKUP DATABASE
+2. SHUTDOWN IMMEDIATE
+
+3. CREATE TABLES AFTER THE BACKUP
+
+
+Microsoft Windows [Version 10.0.14393]
+(c) 2016 Microsoft Corporation. All rights reserved.
+
+C:\WINDOWS\system32>sqlplus sys/oracle as sysdba
+
+SQL*Plus: Release 12.1.0.2.0 Production on Thu Oct 13 18:50:03 2016
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> select name from v$database;
+
+NAME
+---------
+CATBKP
+
+SQL> connect sys/oracle@oracle1
+ERROR:
+ORA-28009: connection as SYS should be as SYSDBA or SYSOPER
+
+
+Warning: You are no longer connected to ORACLE.
+SQL> exit
+
+C:\WINDOWS\system32>set database_sid=oracle1
+
+C:\WINDOWS\system32>sqlplus sys/oracle as sysdba
+
+SQL*Plus: Release 12.1.0.2.0 Production on Thu Oct 13 18:51:08 2016
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> select name from v$database;
+
+NAME
+---------
+CATBKP
+
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+C:\WINDOWS\system32>sqlplus sys/oracle@oracle1 as sysdba
+
+SQL*Plus: Release 12.1.0.2.0 Production on Thu Oct 13 18:52:04 2016
+
+Copyright (c) 1982, 2014, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.1.0.2.0 - 64bit Production
+With the Partitioning, OLAP, Advanced Analytics and Real Application Testing options
+
+SQL> select name from v$database;
+
+NAME
+---------
+ORACLE1
+
+SQL> alter user hr identified by oracle account unlock;
+
+User altered.
+
+SQL> DESC V$LOG;
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ GROUP#                                             NUMBER
+ THREAD#                                            NUMBER
+ SEQUENCE#                                          NUMBER
+ BYTES                                              NUMBER
+ BLOCKSIZE                                          NUMBER
+ MEMBERS                                            NUMBER
+ ARCHIVED                                           VARCHAR2(3)
+ STATUS                                             VARCHAR2(16)
+ FIRST_CHANGE#                                      NUMBER
+ FIRST_TIME                                         DATE
+ NEXT_CHANGE#                                       NUMBER
+ NEXT_TIME                                          DATE
+ CON_ID                                             NUMBER
+
+SQL> SELECT SEQUENCE#, STATUS FROM V$LOG;
+
+ SEQUENCE# STATUS
+---------- ----------------
+        19 INACTIVE
+        20 INACTIVE
+        21 CURRENT
+
+SQL> CREATE TABLE HR.CLASSROOM (NAME VARCHAR2(50));
+
+Table created.
+
+SQL> DESC HR.CLASSROOM
+ Name                                      Null?    Type
+ ----------------------------------------- -------- ----------------------------
+ NAME                                               VARCHAR2(50)
+
+SQL>
+
+4.SHUTDOWN IMMEDIATE
+
+5. startup mount
+6. RECOVER
+
+COMPARE THE DIFFERENCE

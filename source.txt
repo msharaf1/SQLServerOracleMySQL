@@ -1,0 +1,27 @@
+oracle1.__data_transfer_cache_size=0
+oracle1.__db_cache_size=360710144
+oracle1.__java_pool_size=4194304
+oracle1.__large_pool_size=25165824
+oracle1.__oracle_base='C:\app\oracleuser'#ORACLE_BASE set from environment
+oracle1.__pga_aggregate_target=419430400
+oracle1.__sga_target=629145600
+oracle1.__shared_io_pool_size=16777216
+oracle1.__shared_pool_size=213909504
+oracle1.__streams_pool_size=0
+*.audit_file_dest='C:\app\oracleuser\admin\ORACLE2\adump'
+*.audit_trail='db'
+*.compatible='12.1.0.2.0'
+*.control_files='C:\app\oracleuser\oradata\ORACLE2\control01.ctl','C:\app\oracleuser\fast_recovery_area\ORACLE2\control02.ctl','C:\app\oracleuser\oradata\ORACLE2\control03.ctl'
+*.db_block_size=8192
+*.db_domain=''
+*.db_name='ORACLE2'
+*.db_recovery_file_dest='C:\app\oracleuser\fast_recovery_area'
+*.db_recovery_file_dest_size=9663676416
+*.diagnostic_dest='C:\app\oracleuser'
+*.dispatchers='(PROTOCOL=TCP) (SERVICE=ORACLE2XDB)'
+*.local_listener='LISTENER_ORACLE2'
+*.memory_target=1000m
+*.open_cursors=300
+*.processes=500
+*.remote_login_passwordfile='Exclusive'
+*.undo_tablespace='UNDOTBS1'

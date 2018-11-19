@@ -1,0 +1,2 @@
+Setup.exe /qs /Action=install /Features=SQLEngine,Replication,IS,Conn 
+/InstanceName=MSSQLCORE /SQLSYSADMINACCOUNTS="Contoso\kim_akers" /IAcceptSQLServerLicenseTerms

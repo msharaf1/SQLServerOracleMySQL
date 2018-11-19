@@ -1,0 +1,398 @@
+Oct., 2016
+George Mason University
+OCP - Practice – 6
+
+Tablespace Point-In-Time Recovery using RMAN
+
+
+Step-1: CREATE  TABLESPACE  J 
+DATAFILE 'C:\app\oracleuser\oradata\ORACLE1\j.dbf' size 100M autoextend on;
+
+Step-2: create table T1 tablespace Lab2 as select * from hr.employees;
+
+
+Step-3: Perform full backup of the database
+
+Backup database plus archivelog;
+
+Step-4: select current_scn from v$database;
+
+CURRENT_SCN
+-----------
+3924436
+
+SELECT TO_date (10-27-2016 22:32:00, 'MM-DD-YYYY HH24:MI:SS')
+     FROM DUAL;
+
+10-27-2016 22:35:58
+10-27-2016 22:35:58
+
+Alter session set nls_date_format='MM-DD-YYYY HH24:MI:SS'
+
+
+SELECT TO_date (sysdate,'MM-DD-YYYY HH24:MI:SS')
+     FROM DUAL;
+
+Step-4: select employee_id, last_name, salary
+from T1
+where department_id=60
+/
+
+EMPLOYEE_ID LAST_NAME                     SALARY
+----------- 	------------------------- 		----------
+        103 	Hunold                          	9000
+        104	 Ernst                           	6000
+        105 	Austin                          	4800
+        106 	Pataballa                       	4800
+        107 	Lorentz                         	4200
+
+Step-5:	update T1
+set salary = salary *2.25
+where department_id=60
+/
+commit;
+
+select employee_id, last_name, salary
+from T1
+where department_id=60
+/
+
+
+
+
+EMPLOYEE_ID LAST_NAME                     SALARY
+----------- 	------------------------- 		----------
+        103 	Hunold                         	11250
+        104 	Ernst                           		7500
+        105 	Austin                          	6000
+        106 	Pataballa                      	 6000
+        107 	Lorentz                         	5250
+
+
+Step-6: execute the below mentioned query and should receive “no rows selected” message
+
+SELECT OBJ1_NAME, OBJ2_NAME, REASON
+FROM sys.ts_pitr_check
+WHERE(ts1_name =  'lab2'  AND ts2_name != 'lab2')
+OR   (ts1_name != 'lab2'  AND ts2_name =  'lab2');
+
+Step-7: create a directory Aux_Database as below
+ C:\app\oracleuser\oradata\Aux_Database
+Step-8: open a separate window and execute the following recover command in RMAN
+
+Rman  target /
+recover tablespace Lab2 
+until time "TO_date('10-27-2016 22:35:58', 'MM-DD-YYYY HH24:MI:SS')"
+auxiliary destination 'C:\app\oracleuser\oradata\Aux_Database';
+
+
+Once the above command is executed you will see the following messages on the screen.
+
+Starting recover at 07-OCT-10
+using channel ORA_DISK_1
+RMAN-05026: WARNING: presuming following set of tablespaces applies to specified
+ point in time
+
+List of tablespaces expected to have UNDO segments
+Tablespace SYSTEM
+Tablespace UNDOTBS1
+
+Creating automatic instance, with SID='cdzt'
+
+initialization parameters used for automatic instance:
+db_name=ORCTEST
+compatible=11.1.0.0.0
+db_block_size=8192
+db_files=200
+db_unique_name=tspitr_ORCTEST_cdzt
+large_pool_size=1M
+shared_pool_size=110M
+processes=50
+#No auxiliary parameter file used
+db_create_file_dest=c:\app\oracle\oradata\auxx
+control_files=c:\app\oracle\oradata\auxx/cntrl_tspitr_ORCTEST_cdzt.f
+
+
+starting up automatic instance ORCTEST
+
+Oracle instance started
+
+Total System Global Area     205070336 bytes
+
+Fixed Size                     1332104 bytes
+Variable Size                146803832 bytes
+Database Buffers              50331648 bytes
+Redo Buffers                   6602752 bytes
+Automatic instance created
+
+contents of Memory Script:
+{
+# set the until clause
+set until  scn 1091452;
+# restore the controlfile
+restore clone controlfile;
+# mount the controlfile
+sql clone 'alter database mount clone database';
+# archive current online log for tspitr to a resent until time
+sql 'alter system archive log current';
+# avoid unnecessary autobackups for structural changes during TSPITR
+sql 'begin dbms_backup_restore.AutoBackupFlag(FALSE); end;';
+}
+executing Memory Script
+
+executing command: SET until clause
+
+Starting restore at 07-OCT-10
+allocated channel: ORA_AUX_DISK_1
+channel ORA_AUX_DISK_1: SID=43 device type=DISK
+
+channel ORA_AUX_DISK_1: starting datafile backup set restore
+channel ORA_AUX_DISK_1: restoring control file
+channel ORA_AUX_DISK_1: reading from backup piece C:\APP\ORACLE\FLASH_RECOVERY_AREA\ORCTEST\BACKUPSE
+T\2010_10_07\O1_MF_NCSNF_TAG20101006T235945_6BTKKTWH_.BKP
+channel ORA_AUX_DISK_1: piece handle=C:\APP\ORACLE\FLASH_RECOVERY_AREA\ORCTEST\BACKUPSET\2010_10_07\
+O1_MF_NCSNF_TAG20101006T235945_6BTKKTWH_.BKP tag=TAG20101006T235945
+channel ORA_AUX_DISK_1: restored backup piece 1
+channel ORA_AUX_DISK_1: restore complete, elapsed time: 00:00:01
+output file name=C:\APP\ORACLE\ORADATA\AUXX\CNTRL_TSPITR_ORCTEST_CDZT.F
+Finished restore at 07-OCT-10
+
+sql statement: alter database mount clone database
+
+sql statement: alter system archive log current
+
+sql statement: begin dbms_backup_restore.AutoBackupFlag(FALSE); end;
+
+contents of Memory Script:
+{
+# generated tablespace point-in-time recovery script
+# set the until clause
+set until  scn 1091452;
+plsql <<<-- tspitr_2
+declare
+  sqlstatement       varchar2(512);
+  offline_not_needed exception;
+  pragma exception_init(offline_not_needed, -01539);
+begin
+  sqlstatement := 'alter tablespace '||  'LAB2' ||' offline for recover';
+  krmicd.writeMsg(6162, sqlstatement);
+  krmicd.execSql(sqlstatement);
+exception
+  when offline_not_needed then
+    null;
+end; >>>;
+# set an omf destination filename for restore
+set newname for clone datafile  1 to new;
+# set an omf destination filename for restore
+set newname for clone datafile  3 to new;
+# set an omf destination filename for restore
+set newname for clone datafile  2 to new;
+# set an omf destination tempfile
+set newname for clone tempfile  1 to new;
+# set a destination filename for restore
+set newname for datafile  6 to
+ "C:\APP\ORACLE\ORADATA\ORCTEST\LAB_TBS02.DBF";
+# rename all tempfiles
+switch clone tempfile all;
+# restore the tablespaces in the recovery set plus the auxiliary tablespaces
+restore clone datafile  1, 3, 2, 6;
+switch clone datafile all;
+#online the datafiles restored or flipped
+sql clone "alter database datafile  1 online";
+#online the datafiles restored or flipped
+sql clone "alter database datafile  3 online";
+#online the datafiles restored or flipped
+sql clone "alter database datafile  2 online";
+#online the datafiles restored or flipped
+sql clone "alter database datafile  6 online";
+# make the controlfile point at the restored datafiles, then recover them
+recover clone database tablespace  "LAB2", "SYSTEM", "UNDOTBS1", "SYSAUX" delete archivelog;
+alter clone database open resetlogs;
+}
+executing Memory Script
+
+executing command: SET until clause
+
+sql statement: alter tablespace LAB2 offline for recover
+
+executing command: SET NEWNAME
+
+executing command: SET NEWNAME
+
+executing command: SET NEWNAME
+
+executing command: SET NEWNAME
+
+executing command: SET NEWNAME
+
+renamed tempfile 1 to C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\DATAFILE\O1_MF_TEMP_%U_.TMP in
+control file
+
+Starting restore at 07-OCT-10
+using channel ORA_AUX_DISK_1
+
+channel ORA_AUX_DISK_1: starting datafile backup set restore
+channel ORA_AUX_DISK_1: specifying datafile(s) to restore from backup set
+channel ORA_AUX_DISK_1: restoring datafile 00001 to C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\D
+ATAFILE\O1_MF_SYSTEM_%U_.DBF
+channel ORA_AUX_DISK_1: restoring datafile 00003 to C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\D
+ATAFILE\O1_MF_UNDOTBS1_%U_.DBF
+channel ORA_AUX_DISK_1: restoring datafile 00002 to C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\D
+ATAFILE\O1_MF_SYSAUX_%U_.DBF
+channel ORA_AUX_DISK_1: restoring datafile 00006 to C:\APP\ORACLE\ORADATA\ORCTEST\LAB_TBS02.DBF
+channel ORA_AUX_DISK_1: reading from backup piece C:\APP\ORACLE\FLASH_RECOVERY_AREA\ORCTEST\BACKUPSE
+T\2010_10_06\O1_MF_NNNDF_TAG20101006T235945_6BTKFQ1N_.BKP
+channel ORA_AUX_DISK_1: piece handle=C:\APP\ORACLE\FLASH_RECOVERY_AREA\ORCTEST\BACKUPSET\2010_10_06\
+O1_MF_NNNDF_TAG20101006T235945_6BTKFQ1N_.BKP tag=TAG20101006T235945
+channel ORA_AUX_DISK_1: restored backup piece 1
+channel ORA_AUX_DISK_1: restore complete, elapsed time: 00:01:45
+Finished restore at 07-OCT-10
+
+datafile 1 switched to datafile copy
+input datafile copy RECID=5 STAMP=731722058 file name=C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT
+\DATAFILE\O1_MF_SYSTEM_6BTKS0VG_.DBF
+datafile 3 switched to datafile copy
+input datafile copy RECID=6 STAMP=731722058 file name=C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT
+\DATAFILE\O1_MF_UNDOTBS1_6BTKS103_.DBF
+datafile 2 switched to datafile copy
+input datafile copy RECID=7 STAMP=731722058 file name=C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT
+\DATAFILE\O1_MF_SYSAUX_6BTKS0YV_.DBF
+
+sql statement: alter database datafile  1 online
+
+sql statement: alter database datafile  3 online
+
+sql statement: alter database datafile  2 online
+
+sql statement: alter database datafile  6 online
+
+Starting recover at 07-OCT-10
+using channel ORA_AUX_DISK_1
+
+starting media recovery
+
+archived log for thread 1 with sequence 17 is already on disk as file C:\APP\ORACLE\FLASH_RECOVERY_A
+REA\ORCTEST\ARCHIVELOG\2010_10_07\O1_MF_1_17_6BTKKYT1_.ARC
+archived log for thread 1 with sequence 18 is already on disk as file C:\APP\ORACLE\FLASH_RECOVERY_A
+REA\ORCTEST\ARCHIVELOG\2010_10_07\O1_MF_1_18_6BTKRW31_.ARC
+archived log file name=C:\APP\ORACLE\FLASH_RECOVERY_AREA\ORCTEST\ARCHIVELOG\2010_10_07\O1_MF_1_17_6B
+TKKYT1_.ARC thread=1 sequence=17
+archived log file name=C:\APP\ORACLE\FLASH_RECOVERY_AREA\ORCTEST\ARCHIVELOG\2010_10_07\O1_MF_1_18_6B
+TKRW31_.ARC thread=1 sequence=18
+media recovery complete, elapsed time: 00:00:04
+Finished recover at 07-OCT-10
+
+database opened
+
+contents of Memory Script:
+{
+# export the tablespaces in the recovery set
+host 'exp userid =
+'********'
+ point_in_time_recover=y tablespaces= LAB2 file=
+tspitr_a.dmp';
+# shutdown clone before import
+shutdown clone immediate
+# import the tablespaces in the recovery set
+host 'imp userid =
+'********'
+ point_in_time_recover=y file=tspitr_a.dmp';
+# online/offline the tablespace imported
+sql "alter tablespace  LAB2 online";
+sql "alter tablespace  LAB2 offline";
+# enable autobackups in case user does open resetlogs from RMAN after TSPITR
+sql 'begin dbms_backup_restore.AutoBackupFlag(TRUE); end;';
+}
+executing Memory Script
+
+
+Export: Release 11.1.0.6.0 - Production on Thu Oct 7 00:08:21 2010
+
+Copyright (c) 1982, 2007, Oracle.  All rights reserved.
+
+
+Connected to: Oracle Database 11g Enterprise Edition Release 11.1.0.6.0 - Production
+With the Partitioning, OLAP, Data Mining and Real Application Testing options
+Export done in WE8MSWIN1252 character set and AL16UTF16 NCHAR character set
+Note: table data (rows) will not be exported
+
+About to export Tablespace Point-in-time Recovery objects...
+For tablespace LAB2 ...
+. exporting cluster definitions
+. exporting table definitions
+. . exporting table                        EMPTEST
+. exporting referential integrity constraints
+. exporting triggers
+. end point-in-time recovery
+Export terminated successfully without warnings.
+host command complete
+
+database closed
+database dismounted
+Oracle instance shut down
+
+
+Import: Release 11.1.0.6.0 - Production on Thu Oct 7 00:08:57 2010
+
+Copyright (c) 1982, 2007, Oracle.  All rights reserved.
+
+
+Connected to: Oracle Database 11g Enterprise Edition Release 11.1.0.6.0 - Production
+With the Partitioning, OLAP, Data Mining and Real Application Testing options
+
+Export file created by EXPORT:V11.01.00 via conventional path
+About to import Tablespace Point-in-time Recovery objects...
+import done in WE8MSWIN1252 character set and AL16UTF16 NCHAR character set
+. importing SYS's objects into SYS
+. importing HR's objects into HR
+. . importing table                      "EMPTEST"
+. importing SYS's objects into SYS
+Import terminated successfully without warnings.
+host command complete
+
+sql statement: alter tablespace  LAB2 online
+
+sql statement: alter tablespace  LAB2 offline
+
+sql statement: begin dbms_backup_restore.AutoBackupFlag(TRUE); end;
+
+Removing automatic instance
+Automatic instance removed
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\CNTRL_TSPITR_ORCTEST_CDZT.F deleted
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\DATAFILE\O1_MF_SYSTEM_6BTKS0V
+G_.DBF deleted
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\DATAFILE\O1_MF_UNDOTBS1_6BTKS
+103_.DBF deleted
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\DATAFILE\O1_MF_SYSAUX_6BTKS0Y
+V_.DBF deleted
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\DATAFILE\O1_MF_TEMP_6BTKWZLN_
+.TMP deleted
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\ONLINELOG\O1_MF_1_6BTKWOMM_.L
+OG deleted
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\ONLINELOG\O1_MF_2_6BTKWQVX_.L
+OG deleted
+auxiliary instance file C:\APP\ORACLE\ORADATA\AUXX\TSPITR_ORCTEST_CDZT\ONLINELOG\O1_MF_3_6BTKWSVX_.L
+OG deleted
+Finished recover at 07-OCT-10
+
+
+After the recovery is completed follow the below listed steps
+
+Step-9: select tablespace_name, status from dba_tablespaces;
+
+	alter tablespace lab2 online;
+
+Step-10: 	select employee_id, last_name, salary
+    		from emptest
+    		where department_id=60
+    		/
+
+EMPLOYEE_ID LAST_NAME                     SALARY
+----------- ------------------------- ----------
+        103 Hunold                          9000
+        104 Ernst                           6000
+        105 Austin                          4800
+        106 Pataballa                       4800
+        107 Lorentz                         4200
+
+As you can see the table is restored to the point before the update of the salary.

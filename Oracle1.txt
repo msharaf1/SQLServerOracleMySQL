@@ -1,0 +1,96 @@
+Startup 'C:\app\oracleuser\product\12.1.0\dbhome_2\database\INIToracle1.ORA'
+
+orapwd file=C:\app\oracleuser\product\12.1.0\dbhome_2\database\PWDORACLE1_1.ora password=oracle  entries=5
+
+RMAN TARGET=SYS/oracle@ORACLE1 CATALOG=RCATUSER/oracle@CATBKP SCRIPT 'backupdb';
+
+18-10-16 06.16.16.421000 PM -04:00
+
+18-OCT-16 06.16.16.421000 PM -04:00
+
+
+RMAN TARGET=SYS/oracle@ORACLE1 CATALOG=RCATUSER/oracle@CATBKP SCRIPT 'backupdb'
+
+SQLPLUS hr/oracle@ORACLE1
+
+select sequence# from v$log where status='CURRENT';
+create table table20 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table21 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table22 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table23 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table24 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table25 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+
+
+run
+{
+set until sequence 35 thread 1;
+restore database;
+recover database;
+alter database open resetlogs;
+}
+
+
+select current_scn from v$database;
+create table table40 as select * from employees;
+select current_scn from v$database;
+create table table41 as select * from employees;
+select current_scn from v$database;
+create table table42 as select * from employees;
+select current_scn from v$database;
+create table table43 as select * from employees;
+select current_scn from v$database;
+create table table45 as select * from employees;
+select current_scn from v$database;
+create table table46 as select * from employees;
+select current_scn from v$database;
+
+
+3102360
+
+run
+{
+set until scn 3102360;
+restore database;
+recover database;
+alter database open resetlogs;
+}
+
+
+RMAN TARGET=SYS/oracle@ORACLE1 CATALOG=RCATUSER/oracle@CATBKP SCRIPT 'backupdb'
+
+
+select sequence# from v$log where status='CURRENT';
+create table table60 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table61 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table62 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table63 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table64 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+create table table65 as select * from employees;
+ALTER SYSTEM SWITCH LOGFILE;
+select sequence# from v$log where status='CURRENT';
+
+
+RMAN TARGET=SYS/oracle@ORACLE1 CATALOG=RCATUSER/oracle@CATBKP SCRIPT 'backupdb'
